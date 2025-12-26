@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OshiNotify 認証</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            min-height: 100vh;
+            color: #e4e4e4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 480px;
+            width: 100%;
+        }
+
+        .card {
+            background: #141414;
+            border: 1px solid #252525;
+            border-radius: 16px;
+            padding: 32px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #888;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .auth-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .auth-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            color: white;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .auth-btn.twitch {
+            background: #9146ff;
+        }
+
+        .auth-btn.twitch:hover {
+            background: #a970ff;
+        }
+
+        .auth-btn.twitcasting {
+            background: #0eaaff;
+        }
+
+        .auth-btn.twitcasting:hover {
+            background: #3bbbff;
+        }
+
+        .result-section {
+            display: none;
+            margin-top: 24px;
+        }
+
+        .result-section.show {
+            display: block;
+        }
+
+        .result-label {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 8px;
+        }
+
+        .result-box {
+            display: flex;
+            gap: 8px;
+        }
+
+        .token-input {
+            flex: 1;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 12px 16px;
+            color: #e4e4e4;
+            font-size: 13px;
+            font-family: monospace;
+        }
+
+        .copy-btn {
+            background: #6366f1;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 20px;
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: #818cf8;
+        }
+
+        .copy-btn.copied {
+            background: #22c55e;
+        }
+
+        .platform-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .info {
+            margin-top: 24px;
+            padding: 16px;
+            background: #0a0a0a;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #888;
+            line-height: 1.6;
+        }
+
+        .info-title {
+            color: #e4e4e4;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .error-message {
+            background: #3f1515;
+            border: 1px solid #7f2d2d;
+            color: #fca5a5;
+            padding: 16px;
+            border-radius: 10px;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+
+        .success-message {
+            background: #14532d;
+            border: 1px solid #22c55e;
+            color: #86efac;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>OshiNotify 認証</h1>
+            <p class="subtitle">連携するサービスを選んでください</p>
+
+            <div id="authButtons" class="auth-buttons">
+                <a href="#" id="twitchAuth" class="auth-btn twitch">
+                    <svg class="platform-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/>
+                    </svg>
+                    Twitchで認証
+                </a>
+                <a href="#" id="twitcastingAuth" class="auth-btn twitcasting">
+                    <svg class="platform-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <circle cx="12" cy="12" r="10"/>
+                    </svg>
+                    ツイキャスで認証
+                </a>
+            </div>
+
+            <div id="resultSection" class="result-section">
+                <div id="successMessage" class="success-message" style="display: none;">
+                    認証が完了しました！
+                </div>
+                <p class="result-label"><span id="platformName"></span>のアクセストークン：</p>
+                <div class="result-box">
+                    <input type="text" id="tokenInput" class="token-input" readonly>
+                    <button id="copyBtn" class="copy-btn">コピー</button>
+                </div>
+                <div class="info">
+                    <p class="info-title">次のステップ</p>
+                    <p>1. 上のトークンをコピーしてください<br>
+                    2. OshiNotifyアプリの設定画面を開く<br>
+                    3. トークンを貼り付けて保存</p>
+                </div>
+            </div>
+
+            <div id="errorSection" class="error-message" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        // Client IDs
+        const TWITCH_CLIENT_ID = 'hkorcol4522e3drbuzd3nn903m75ex';
+        const TWITCASTING_CLIENT_ID = '1609116350492073987.71f81c66cc9397f3f8435ccfb7ff2921121ce5f510380b4e90835c9801ed4755';
+        const REDIRECT_URI = 'https://nxouv.github.io/oshinotify-auth';
+
+        // Twitch OAuth URL
+        const twitchAuthUrl = `https://id.twitch.tv/oauth2/authorize?response_type=token&client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&scope=`;
+
+        // TwitCasting OAuth URL
+        const twitcastingAuthUrl = `https://apiv2.twitcasting.tv/oauth2/authorize?client_id=${TWITCASTING_CLIENT_ID}&response_type=token`;
+
+        // Set auth URLs
+        document.getElementById('twitchAuth').href = twitchAuthUrl;
+        document.getElementById('twitcastingAuth').href = twitcastingAuthUrl;
+
+        // Check for token in URL
+        function checkForToken() {
+            const hash = window.location.hash.substring(1);
+            const params = new URLSearchParams(hash);
+            
+            const accessToken = params.get('access_token');
+            const error = params.get('error');
+            const errorDescription = params.get('error_description');
+
+            if (accessToken) {
+                // Determine platform based on token format or other indicators
+                let platform = 'Twitch';
+                if (window.location.hash.includes('token_type=bearer') && !window.location.hash.includes('scope=')) {
+                    platform = 'ツイキャス';
+                }
+
+                showResult(accessToken, platform);
+                // Clear the hash
+                history.replaceState(null, '', window.location.pathname);
+            } else if (error) {
+                showError(errorDescription || error);
+            }
+
+            // Check query params for TwitCasting denied
+            const queryParams = new URLSearchParams(window.location.search);
+            if (queryParams.get('result') === 'denied') {
+                showError('認証がキャンセルされました');
+            }
+        }
+
+        function showResult(token, platform) {
+            document.getElementById('authButtons').style.display = 'none';
+            document.getElementById('resultSection').classList.add('show');
+            document.getElementById('successMessage').style.display = 'block';
+            document.getElementById('platformName').textContent = platform;
+            document.getElementById('tokenInput').value = token;
+        }
+
+        function showError(message) {
+            const errorSection = document.getElementById('errorSection');
+            errorSection.textContent = message;
+            errorSection.style.display = 'block';
+        }
+
+        // Copy button
+        document.getElementById('copyBtn').addEventListener('click', async () => {
+            const tokenInput = document.getElementById('tokenInput');
+            const copyBtn = document.getElementById('copyBtn');
+            
+            try {
+                await navigator.clipboard.writeText(tokenInput.value);
+                copyBtn.textContent = 'コピー完了';
+                copyBtn.classList.add('copied');
+                
+                setTimeout(() => {
+                    copyBtn.textContent = 'コピー';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            } catch (err) {
+                // Fallback
+                tokenInput.select();
+                document.execCommand('copy');
+                copyBtn.textContent = 'コピー完了';
+                copyBtn.classList.add('copied');
+                
+                setTimeout(() => {
+                    copyBtn.textContent = 'コピー';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            }
+        });
+
+        // Check on load
+        checkForToken();
+    </script>
+</body>
+</html>
